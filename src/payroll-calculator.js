@@ -3,8 +3,10 @@
  */
 import { getPayStrategy } from './strategies/index.js';
 import { TaxCalculator } from './tax/tax-calculator.js';
+import { BonusCalculator } from './bonus/bonus-calculator.js';
 
 const taxCalculator = new TaxCalculator();
+const bonusCalculator = new BonusCalculator();
 
 let globalPayrollStats = {
   totalProcessed: 0,
@@ -42,24 +44,7 @@ export function calculatePayroll(employee, period, region = 'UA') {
 
   const { incomeTax, socialTax, totalTax } = taxCalculator.calculate(grossPay, region);
 
-  // --- BONUS LOGIC inline ---
-  let bonus = 0;
-
-  if (period.quarter === 4) {
-    // quarterly bonus — 5% of gross
-    bonus += grossPay * 0.05;
-  }
-
-  if (period.year && employee.tenureYears >= 5) {
-    // yearly loyalty bonus
-    bonus += employee.monthlySalary ? employee.monthlySalary * 0.1 : grossPay * 0.08;
-  }
-
-  if (period.performanceRating >= 4) {
-    // performance bonus
-    const perfMultiplier = period.performanceRating === 5 ? 0.15 : 0.08;
-    bonus += grossPay * perfMultiplier;
-  }
+  const bonus = bonusCalculator.calculate(grossPay, employee, period);
 
   // float arithmetic — known precision issues
   const netPay = grossPay - totalTax + bonus;
