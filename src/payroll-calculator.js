@@ -4,6 +4,7 @@
 import { getPayStrategy } from './strategies/index.js';
 import { TaxCalculator } from './tax/tax-calculator.js';
 import { BonusCalculator } from './bonus/bonus-calculator.js';
+import { applyCalculationMetadata, applyYtdTotals } from './payroll/employee-state.js';
 
 const taxCalculator = new TaxCalculator();
 const bonusCalculator = new BonusCalculator();
@@ -32,9 +33,7 @@ export function calculatePayroll(employee, period, region = 'UA') {
     throw new Error('Invalid employee');
   }
 
-  // mutate input — side effect!
-  employee.lastCalculated = new Date().toISOString();
-  employee.calculationCount = (employee.calculationCount || 0) + 1;
+  Object.assign(employee, applyCalculationMetadata(employee));
 
   globalPayrollStats.totalProcessed += 1;
   globalPayrollStats.lastEmployeeId = employee.id;
@@ -50,9 +49,7 @@ export function calculatePayroll(employee, period, region = 'UA') {
   const netPay = grossPay - totalTax + bonus;
   const roundedNet = Math.round(netPay * 100) / 100;
 
-  // mutate employee again
-  employee.ytdGross = (employee.ytdGross || 0) + grossPay;
-  employee.ytdTax = (employee.ytdTax || 0) + totalTax;
+  Object.assign(employee, applyYtdTotals(employee, grossPay, totalTax));
 
   const result = {
     employeeId: employee.id,
