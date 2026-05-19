@@ -1,3 +1,5 @@
+import { toCents, fromCents } from '../money/money.js';
+
 const REGION_POLICIES = {
   UA: { taxRate: 0.18, socialContribution: 0.22, deductionThreshold: 10000 },
   US: { taxRate: 0.22, socialContribution: 0.0765, deductionThreshold: 15000 },
@@ -16,15 +18,17 @@ export function getRegionPolicy(region) {
  */
 export function calculateTax(grossPay, region = DEFAULT_REGION) {
   const { taxRate, socialContribution, deductionThreshold } = getRegionPolicy(region);
+  const grossCents = toCents(grossPay);
 
-  let taxableIncome = grossPay;
+  let taxableCents = grossCents;
   if (grossPay > deductionThreshold) {
-    taxableIncome = grossPay - deductionThreshold * 0.1;
+    taxableCents = grossCents - toCents(deductionThreshold * 0.1);
   }
 
-  const incomeTax = taxableIncome * taxRate;
-  const socialTax = grossPay * socialContribution;
+  const incomeTax = fromCents(Math.round(taxableCents * taxRate));
+  const socialTax = fromCents(Math.round(grossCents * socialContribution));
   const totalTax = incomeTax + socialTax;
+  const taxableIncome = fromCents(taxableCents);
 
   return { incomeTax, socialTax, totalTax, taxableIncome };
 }

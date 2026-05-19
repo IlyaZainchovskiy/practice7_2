@@ -36,28 +36,3 @@ export function calculateNetPayCents(grossPay, totalTax, bonus) {
   const netCents = toCents(grossPay) - toCents(totalTax) + toCents(bonus);
   return roundDollars(fromCents(netCents));
 }
-
-/**
- * Tax amounts in cents — rates applied to cent amounts then converted back.
- */
-export function calculateTaxFromCents(grossPay, region, getRegionPolicy, calculateTaxable) {
-  const policy = getRegionPolicy(region);
-  const grossCents = toCents(grossPay);
-
-  let taxableCents = grossCents;
-  if (grossPay > policy.deductionThreshold) {
-    const reduction = toCents(policy.deductionThreshold * 0.1);
-    taxableCents = grossCents - reduction;
-  }
-
-  const incomeTax = fromCents(Math.round(taxableCents * policy.taxRate));
-  const socialTax = fromCents(Math.round(grossCents * policy.socialContribution));
-  const totalTax = incomeTax + socialTax;
-
-  return {
-    incomeTax,
-    socialTax,
-    totalTax,
-    taxableIncome: fromCents(taxableCents),
-  };
-}

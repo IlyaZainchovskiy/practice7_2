@@ -6,6 +6,8 @@ import { TaxCalculator } from './tax/tax-calculator.js';
 import { BonusCalculator } from './bonus/bonus-calculator.js';
 import { applyCalculationMetadata, applyYtdTotals } from './payroll/employee-state.js';
 import { generatePayrollReport } from './report/payroll-report-generator.js';
+import { calculateNetPayCents } from './money/money.js';
+
 const taxCalculator = new TaxCalculator();
 const bonusCalculator = new BonusCalculator();
 
@@ -45,8 +47,7 @@ export function calculatePayroll(employee, period, region = 'UA') {
 
   const bonus = bonusCalculator.calculate(grossPay, employee, period);
 
-  const netPay = grossPay - totalTax + bonus;
-  const roundedNet = Math.round(netPay * 100) / 100;
+  const roundedNet = calculateNetPayCents(grossPay, totalTax, bonus);
 
   Object.assign(employee, applyYtdTotals(employee, grossPay, totalTax));
 
