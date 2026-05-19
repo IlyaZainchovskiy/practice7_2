@@ -1,6 +1,5 @@
 # Employee Payroll Calculator — Legacy Refactoring
 
-Практичне завдання: безпечний рефакторинг legacy-модуля розрахунку зарплати через **TDD** та **characterization tests**.
 
 ## Структура
 
