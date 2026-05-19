@@ -5,7 +5,7 @@ import { getPayStrategy } from './strategies/index.js';
 import { TaxCalculator } from './tax/tax-calculator.js';
 import { BonusCalculator } from './bonus/bonus-calculator.js';
 import { applyCalculationMetadata, applyYtdTotals } from './payroll/employee-state.js';
-
+import { generatePayrollReport } from './report/payroll-report-generator.js';
 const taxCalculator = new TaxCalculator();
 const bonusCalculator = new BonusCalculator();
 
@@ -45,7 +45,6 @@ export function calculatePayroll(employee, period, region = 'UA') {
 
   const bonus = bonusCalculator.calculate(grossPay, employee, period);
 
-  // float arithmetic — known precision issues
   const netPay = grossPay - totalTax + bonus;
   const roundedNet = Math.round(netPay * 100) / 100;
 
@@ -72,32 +71,6 @@ export function calculatePayroll(employee, period, region = 'UA') {
   result.report = generatePayrollReport(result, employee, period);
 
   return result;
-}
-
-function generatePayrollReport(result, employee, period) {
-  const lines = [];
-  lines.push('=== PAYROLL REPORT ===');
-  lines.push('Employee: ' + employee.name + ' (' + employee.id + ')');
-  lines.push('Type: ' + employee.type.toUpperCase());
-  lines.push('Region: ' + result.region);
-  lines.push('--- Earnings ---');
-  lines.push('Gross Pay: $' + result.grossPay.toFixed(2));
-  if (result.overtimePay > 0) {
-    lines.push('  incl. Overtime: $' + result.overtimePay.toFixed(2));
-  }
-  lines.push('Bonus: $' + result.bonus.toFixed(2));
-  lines.push('--- Deductions ---');
-  lines.push('Income Tax: $' + result.incomeTax.toFixed(2));
-  lines.push('Social Tax: $' + result.socialTax.toFixed(2));
-  lines.push('Total Tax: $' + result.totalTax.toFixed(2));
-  lines.push('--- Net ---');
-  lines.push('NET PAY: $' + result.netPay.toFixed(2));
-  lines.push('YTD Gross: $' + result.ytdGross.toFixed(2));
-  if (period.hoursWorked) {
-    lines.push('Hours Worked: ' + period.hoursWorked);
-  }
-  lines.push('=== END REPORT ===');
-  return lines.join('\n');
 }
 
 export default { calculatePayroll, resetGlobalStats, getGlobalStats };
