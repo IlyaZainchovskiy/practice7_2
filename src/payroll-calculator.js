@@ -1,7 +1,7 @@
 /**
- * LEGACY Employee Payroll Calculator
- * НЕ РЕФАКТОРИТИ без characterization tests!
+ * Employee Payroll Calculator (refactored)
  */
+import { getPayStrategy } from './strategies/index.js';
 
 let globalPayrollStats = {
   totalProcessed: 0,
@@ -34,67 +34,8 @@ export function calculatePayroll(employee, period, region = 'UA') {
   globalPayrollStats.totalProcessed += 1;
   globalPayrollStats.lastEmployeeId = employee.id;
 
-  let grossPay = 0;
-  let overtimePay = 0;
-  let basePay = 0;
-
-  // HUGE switch — 50+ lines of business logic
-  switch (employee.type) {
-    case 'hourly': {
-      const rate = employee.hourlyRate || 0;
-      const hours = period.hoursWorked || 0;
-
-      if (hours < 0) {
-        throw new Error('Invalid hours');
-      }
-
-      if (hours <= 40) {
-        basePay = hours * rate;
-      } else {
-        const regularHours = 40;
-        const overtimeHours = hours - 40;
-        basePay = regularHours * rate;
-        // overtime 1.5x
-        overtimePay = overtimeHours * rate * 1.5;
-
-        // weekend overtime — подвійна ставка для годин понад 40 у вихідні
-        if (period.isWeekend) {
-          overtimePay = overtimeHours * rate * 2.0;
-        }
-      }
-      grossPay = basePay + overtimePay;
-      break;
-    }
-
-    case 'salary': {
-      const monthlySalary = employee.monthlySalary || 0;
-      // prorate by days worked (assume 22 working days per month)
-      const daysWorked = period.daysWorked !== undefined ? period.daysWorked : 22;
-      if (daysWorked < 0 || daysWorked > 31) {
-        throw new Error('Invalid days worked');
-      }
-      basePay = (monthlySalary / 22) * daysWorked;
-      grossPay = basePay;
-      break;
-    }
-
-    case 'contract': {
-      const contractAmount = employee.contractAmount || 0;
-      const milestones = period.milestonesCompleted || 0;
-      const totalMilestones = employee.totalMilestones || 1;
-
-      if (milestones < 0 || milestones > totalMilestones) {
-        throw new Error('Invalid milestones');
-      }
-
-      basePay = (contractAmount / totalMilestones) * milestones;
-      grossPay = basePay;
-      break;
-    }
-
-    default:
-      throw new Error('Unknown employee type: ' + employee.type);
-  }
+  const strategy = getPayStrategy(employee.type);
+  const { grossPay, basePay, overtimePay } = strategy.calculate(employee, period);
 
   // --- TAX LOGIC hardcoded inline ---
   let taxRate = 0.18;
