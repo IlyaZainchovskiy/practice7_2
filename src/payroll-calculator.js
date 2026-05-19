@@ -2,6 +2,9 @@
  * Employee Payroll Calculator (refactored)
  */
 import { getPayStrategy } from './strategies/index.js';
+import { TaxCalculator } from './tax/tax-calculator.js';
+
+const taxCalculator = new TaxCalculator();
 
 let globalPayrollStats = {
   totalProcessed: 0,
@@ -37,29 +40,7 @@ export function calculatePayroll(employee, period, region = 'UA') {
   const strategy = getPayStrategy(employee.type);
   const { grossPay, basePay, overtimePay } = strategy.calculate(employee, period);
 
-  // --- TAX LOGIC hardcoded inline ---
-  let taxRate = 0.18;
-  let socialContribution = 0.22;
-  let deductionThreshold = 10000;
-
-  if (region === 'US') {
-    taxRate = 0.22;
-    socialContribution = 0.0765;
-    deductionThreshold = 15000;
-  } else if (region === 'EU') {
-    taxRate = 0.25;
-    socialContribution = 0.20;
-    deductionThreshold = 12000;
-  }
-
-  let taxableIncome = grossPay;
-  if (grossPay > deductionThreshold) {
-    taxableIncome = grossPay - deductionThreshold * 0.1;
-  }
-
-  const incomeTax = taxableIncome * taxRate;
-  const socialTax = grossPay * socialContribution;
-  let totalTax = incomeTax + socialTax;
+  const { incomeTax, socialTax, totalTax } = taxCalculator.calculate(grossPay, region);
 
   // --- BONUS LOGIC inline ---
   let bonus = 0;
